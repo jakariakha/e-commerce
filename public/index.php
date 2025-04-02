@@ -1,5 +1,3 @@
 <?php
-require('../app/Core/Router.php');
-
-
+require_once('../core/router.php');
 ?>
