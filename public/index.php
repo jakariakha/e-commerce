@@ -1,3 +1,5 @@
 <?php
-echo 1;
+require('../app/Core/Router.php');
+
+
 ?>
