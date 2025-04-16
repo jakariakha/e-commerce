@@ -1,6 +1,6 @@
 $(document).ready(function() {
     let cartCount = 0, totalAmount = 0, productId, existingItem, cartList = $('.cartList'), cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
-    console.log(cartItems.length)
+    // console.log(cartItems.length)
     if (cartItems.length) {
         cartCount = cartItems.length;
         $('.cartCount').text(cartItems.length);
@@ -80,10 +80,10 @@ $(document).ready(function() {
         updateCartCount();
         updateTotalAmount(productDetails);
         cartList.append(
-            `<div class="card mb-3" style="width: 20rem;" data-product-id="${productDetails.product_id}">
-                <div class="card-body p-2 d-flex justify-content-between align-items-center">
+            `<div class="card mb-3" data-product-id="${productDetails.product_id}">
+                <div class="card-body p-2 d-flex flex-column justify-content-between">
                     <div class="flex-grow-1">
-                        <h6 class="card-title mb-1 text-truncate">${productDetails.name}</h6>
+                        <p class="mb-1 text-break">${productDetails.name}</p>
                         <h6 class="productPrice card-subtitle text-muted" data-product-price="${productDetails.price}">৳${productDetails.price}</h6>
                     </div>
                     <div class="ms-3 d-flex align-items-center">
@@ -147,7 +147,7 @@ $(document).ready(function() {
         
         productId = $(this).closest('.card').data('product-id');
         cartItems = cartItems.filter(products => products.product_id !== String(productId));
-        console.log(cartItems)
+        // console.log(cartItems)
         localStorage.setItem('cartItems', JSON.stringify(cartItems));
         isCartEmpty();
     })

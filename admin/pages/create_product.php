@@ -1,7 +1,10 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 require_once('../includes/cdn.php');
 require_once('../admin/includes/navbar.php');
+require_once('../admin/includes/isLoggedIn.php');
 require_once('../config/database.php');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -10,9 +13,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $category = $_POST['category'];
     $quantity = $_POST['quantity'];
     $price = $_POST['price'];
+    $slug = strtolower(str_replace(' ', '-', $name));
 
     if ($_FILES['image']['error'] === UPLOAD_ERR_OK) {
-        $imageTmpName =$_FILES['image']['tmp_name'];
+        $imageTmpName = $_FILES['image']['tmp_name'];
         $imageType = ($_FILES['image']['type']);
         $supportedImageType = [
             'image/png' => '.png',
@@ -49,7 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    $sql = "insert into products(name, description, category, image, quantity, price) values('$name', '$description', '$category', '$imageName', '$quantity', '$price')";
+    $sql = "insert into products(name, description, category, image, quantity, price, slug) values('$name', '$description', '$category', '$imageName', '$quantity', '$price', '$slug')";
+    
     if ($conn->query($sql)) {
         $_SESSION['product_create'] = [
             'status' => 'success',
@@ -76,48 +81,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Create product</title>
 </head>
 <body>
-    <div class="d-flex flex-column justify-content-center align-items-center mt-2">
-        <h1 class="d-flex">Create Product</h1>
-        <div class="card" style="width: 40rem">
-            <div class="card-body">
-                <form id="createProductForm" action="" method="POST" enctype="multipart/form-data">
-                    <?php if (isset($_SESSION['product_create'])): ?>
-                    <div class="alert alert-<?php echo ($_SESSION['product_create']['status'] === 'failed') ? 'danger' : $_SESSION['product_create']['status']?> alert-dismissible fade show" role="alert">
-                        <?php echo $_SESSION['product_create']['message']; unset($_SESSION['product_create']) ?>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                    <?php endif; ?>
-                    <div class="mb-3">
-                        <label for="name" class="form-label">Name</label>
-                        <input type="text" class="form-control" id="name" name="name" placeholder="Enter product name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Description</label>
-                        <input type="text" class="form-control" id="description" name="description" placeholder="Enter product description" required>
-                    </div>
-                    <div class="mb-3">
+<div class="d-flex flex-column justify-content-center align-items-center my-4">
+    <h1 class="text-center mb-4">Create Product</h1>
+    <div class="card shadow-sm" style="width: 100%; max-width: 40rem;">
+        <div class="card-body p-4">
+            <form id="createProductForm" action="" method="POST" enctype="multipart/form-data">
+                <?php if (isset($_SESSION['product_create'])): ?>
+                <div class="alert alert-<?php echo ($_SESSION['product_create']['status'] === 'failed') ? 'danger' : $_SESSION['product_create']['status']?> alert-dismissible fade show mb-4" role="alert">
+                    <?php echo $_SESSION['product_create']['message']; unset($_SESSION['product_create']) ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <?php endif; ?>
+                
+                <div class="mb-3">
+                    <label for="name" class="form-label">Product Name</label>
+                    <input type="text" class="form-control" id="name" name="name" placeholder="Enter product name" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" name="description" rows="3" placeholder="Enter detailed product description" required></textarea>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
                         <label for="category" class="form-label">Category</label>
-                        <input type="text" class="form-control" id="category" name="category" placeholder="Enter product category" required>
+                        <select class="form-select" id="category" name="category" required>
+                            <option value="" selected disabled>Select category</option>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Clothing">Clothing</option>
+                            <option value="Home">Home</option>
+                            <option value="Other">Other</option>
+                        </select>
                     </div>
-                    <div class="mb-3">
-                        <label for="image" class="form-label">Image</label>
-                        <input type="file" class="form-control" id="image" name="image" placeholder="Upload product image" required>
+                    <div class="col-md-6 mb-3">
+                        <label for="image" class="form-label">Product Image</label>
+                        <input type="file" class="form-control" id="image" name="image" accept="image/*" required>
                     </div>
-                    <div class="mb-3">
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
                         <label for="quantity" class="form-label">Quantity</label>
-                        <input type="number" class="form-control" id="quantity" name="quantity" placeholder="Enter product quantity" required>
+                        <input type="number" class="form-control" id="quantity" name="quantity" min="0" placeholder="Enter product quantity" required>
                     </div>
-                    <div class="mb-3">
-                        <label for="price" class="form-label">Price</label>
-                        <input type="number" class="form-control" id="price" name="price" placeholder="Enter product price" required>
+                    <div class="col-md-6 mb-3">
+                        <label for="price" class="form-label">Price (৳)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">৳</span>
+                            <input type="number" class="form-control" id="price" name="price" min="0" step="0.01" placeholder="Enter product price" required>
+                        </div>
                     </div>
-                    <div class="mb-3 d-flex justify-content-center items-center">
-                        <button type="submit" class="btn btn-primary w-25">Create</button>
-                    </div>
-                </form>
-            </div>
+                </div>
+                
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-primary py-2">Create Product</button>
+                </div>
+            </form>
         </div>
     </div>
+</div>
     <script>
          window.onload = () => {
             document.getElementById('createProductForm').reset();
